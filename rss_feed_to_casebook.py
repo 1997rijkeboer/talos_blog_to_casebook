@@ -23,9 +23,6 @@ import os
 import webexteamssdk
 from twilio.rest import Client
 
-# account_sid = 'ACc3476f5b6b4c0955910b4f1c540fdca1'
-# auth_token = 'c1135f53fe4bb070112f55db25798cc3'
-# client = Client(account_sid, auth_token)
 
 def open_config():
     '''
@@ -139,8 +136,6 @@ def return_observables(raw_text):
 
     data = json.dumps({"content":raw_text})
 
-    R = requests.get(url = "http://192.168.178.200:80/H5")
-    R = requests.get(url = "http://192.168.178.200:80/L5")
     response = requests.post('https://visibility.amp.cisco.com/iroh/iroh-inspect/inspect', headers=headers, data=data)
     #check if request was succesful
     if response.status_code == 200:
