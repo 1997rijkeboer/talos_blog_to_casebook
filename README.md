@@ -1,5 +1,8 @@
 [![published](https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-published.svg)](https://developer.cisco.com/codeexchange/github/repo/chrivand/talos_blog_to_casebook)
 
+# Note
+This script is a slightly altered version of the orignal script made by chrivand (see forked from ....) to add the Twilio API for whatsapp notifications.
+
 # RSS Feed Blog Parser to Cisco SecureX Threat Response Casebook [v2.0]
 
 This is a sample script to parse the Cisco Talos blog (and other blogs!), check for Target Sightings and automatically add observables to Cisco Casebook. This enables Security Researchers and Threat Responders in a SOC to quickly see if the observables from Talos have been seen in their environment (by leveraging SecureX Threat Response (SxTR)). 
