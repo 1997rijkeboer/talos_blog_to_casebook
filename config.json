@@ -1,28 +1,28 @@
 {
-    "client_id": "",
-    "client_secret": "",
-    "account_sid": "",
-    "auth_token": "",
+    "client_id": "<your_client_id>",
+    "client_secret": "<your_client_secret>",
+    "account_sid": "<Twilio account sid>",
+    "auth_token": "<Twilio auth token>",
     "to": "whatsapp:+31...........",
-    "webex_access_token": "",
-    "webex_room_id": "",
+    "webex_access_token": "<your_webex_access_token>",
+    "webex_room_id": "<your_webex_room_id>",
     "url_feeds": [
         {
             "feed_name": "[Talos RSS Feed]",
             "rss_url": "http://feeds.feedburner.com/feedburner/Talos",
-            "last_etag": "oXbb+WfXl//eA8L1CaRxYBvGJvU",
+            "last_etag": "",
             "last_modified": []
         },
         {
             "feed_name": "[FortiGuard RSS Feed]",
             "rss_url": "http://feeds.feedburner.com/fortinet/blog/threat-research",
-            "last_etag": "w2wItsoGtezHoCl9bcIzN3HuZzQ",
+            "last_etag": "",
             "last_modified": []
         },
         {
             "feed_name": "[Unit 42 RSS Feed]",
             "rss_url": "http://feeds.feedburner.com/Unit42",
-            "last_etag": "t/cdG6T+SKsUMg4P87PJQsTnJGM",
+            "last_etag": "",
             "last_modified": []
         }
     ]
