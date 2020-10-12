@@ -1,4 +1,4 @@
-print("\n\n**************\n\nCREATED BY CHRISTOPHER VAN DER MADE (CHRIVAND)\n\n**************\n\n")
+print("\n\n***************\n\nCREATED BY CHRISTOPHER VAN DER MADE (CHRIVAND)\n\n***************\n\n")
 
 # NOTE: this is a Proof of Concept script, please test before using in production!
 
@@ -15,15 +15,17 @@ print("\n\n**************\n\nCREATED BY CHRISTOPHER VAN DER MADE (CHRIVAND)\n\n*
 # or implied.
 
 import requests
-from urllib.request import Request, urlopen
 from bs4 import BeautifulSoup
 import json
 import feedparser
 from datetime import datetime
 import os
 import webexteamssdk
+from twilio.rest import Client
 
-
+# account_sid = 'ACc3476f5b6b4c0955910b4f1c540fdca1'
+# auth_token = 'c1135f53fe4bb070112f55db25798cc3'
+# client = Client(account_sid, auth_token)
 
 def open_config():
     '''
@@ -47,6 +49,7 @@ def write_config():
         json.dump(config_file, output_file, indent=4)
 
 
+        
 
 def get_CTR_access_token():
     ''' 
@@ -94,6 +97,30 @@ def get_CTR_access_token():
     else:
         # user feedback
         print(f"Access token request failed, status code: {response.status_code}\n")
+        
+
+def get_twilio_access_token():
+    ''' 
+    This function requests access token for API requests
+    '''
+
+    #error checking for API client details
+    if config_file['account_sid']:
+        account_sid = config_file['account_sid']
+    else:
+        print("account_sid is missing in config.json file...\n")
+
+    if config_file['auth_token']:
+        auth_token = config_file['auth_token']
+        
+    else:
+        print("auth_token is missing in config.json file...\n")
+        
+    if config_file['to']:
+        to = config_file['to']
+    else:
+        print("Whatsapp client is missing in config.json file...\n")
+    return account_sid, auth_token, to
 
 
 
@@ -112,6 +139,8 @@ def return_observables(raw_text):
 
     data = json.dumps({"content":raw_text})
 
+    R = requests.get(url = "http://192.168.178.200:80/H5")
+    R = requests.get(url = "http://192.168.178.200:80/L5")
     response = requests.post('https://visibility.amp.cisco.com/iroh/iroh-inspect/inspect', headers=headers, data=data)
     #check if request was succesful
     if response.status_code == 200:
@@ -166,29 +195,40 @@ def clean_entry(entry_link):
     '''
     this function removes hyperlinks and other false positives from a blog post
     ''' 
+    # retrieve entire blog from original link and ingest text only
+    response = requests.get(entry_link)
+    soup = BeautifulSoup(response.content, "html.parser")
+    entire_blog = soup.get_text()
 
-    # retrieve text with html parser
-    req_with_user_agent = Request(entry_link, headers={"User-Agent": "Chrome"})
-    html = urlopen(req_with_user_agent).read()
-    soup = BeautifulSoup(html, "html.parser")
+    # split text into words
+    words_entry = entire_blog.split() 
+    
+    # create empty list for words which do not contain any of the below noise + for every entry clear it again
+    cleaned_entry = []
 
-    # kill all script and style elements
-    for script in soup(["script", "style"]):
-        script.extract()    # rip it out
-
-    # get text
-    raw_text = soup.body.get_text(separator=' ')
-
-    # break into lines and remove leading and trailing space on each
-    lines = (line.strip() for line in raw_text.splitlines())
-    # break multi-headlines into a line each
-    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-    # drop blank lines
-    parsed_text = '\n'.join(chunk for chunk in chunks if chunk)
-    parsed_text = str(parsed_text.encode('utf8'))
+    # remove noise from blogs (hyperlinks etc.)
+    for word in words_entry:
+        if word.startswith('href="'):
+            pass
+        elif word.startswith('src="'):
+            pass
+        elif word.startswith('xmlns:'):
+            pass
+        elif word.startswith('url="'):
+            pass
+        elif word.startswith('Snort.org'):
+            pass
+        elif word.startswith("'https://www.googletagmanager.com"):
+            pass
+        else:
+            cleaned_entry.append(word)
+    
+    # stitch the blog back together (list of words to string)
+    space_words = " "
+    cleaned_entry_str = space_words.join(cleaned_entry)
 
     # retrieve observables from text
-    returned_observables_json = return_observables(parsed_text)
+    returned_observables_json = return_observables(cleaned_entry_str)
 
     # return non clean (malicious, unkown etc.) observables only
     non_clean_observables_json = return_non_clean_observables(returned_observables_json) 
@@ -298,7 +338,36 @@ def new_casebook(feed_name,returned_observables_json,returned_sightings,entry_ti
     # post request to create casebook
     response = requests.post('https://private.intel.amp.cisco.com/ctia/casebook', headers=headers, data=casebook_json)
     if response.status_code == 201:
-        print(f"[201] Success, case added to Casebook added from {feed_name}: {entry_title}\n")
+        print(f"[201] Success, casebook added from {feed_name}: {entry_title}\n")
+        if config_file['account_sid'] is '' or config_file['auth_token'] is '' or config_file['to'] is '':
+
+            # user feed back
+            print("Whatsapp not set.\n\n")
+        else:            
+            try:
+                if returned_sightings['total_sighting_count'] == 0:
+                    webex_text = feed_name + " New case has been added to casebook from RSS Feed: " + entry_title
+                    account, auth, phone = get_twilio_access_token()
+                    client = Client(account, auth)
+                    whatsappmessage = client.messages.create(
+                                 body=webex_text,
+                                 from_='whatsapp:+14155238886',
+                                 to=phone
+                             )
+                    print(whatsappmessage.sid)
+                if returned_sightings['total_sighting_count'] != 0:
+                    webex_text = feed_name + " New case has been added to casebook from RSS Feed: " + entry_title + ". 🚨🚨🚨  HIGH PRIORITY, Target Sightings have been identified! AMP targets: " + str(returned_sightings['total_amp_sighting_count']) + ", Umbrella targets: " + str(returned_sightings['total_umbrella_sighting_count']) + ", Email targets: " + str(returned_sightings['total_email_sighting_count']) + ". 🚨🚨🚨"
+                    account, auth, phone = get_twilio_access_token()
+                    client = Client(account, auth)
+                    whatsappmessage = client.messages.create(
+                                 body=webex_text,
+                                 from_='whatsapp:+14155238886',
+                                 to=phone
+                             )
+                    print(whatsappmessage.sid)
+                # error handling, if for example the Webex API key expired
+            except Exception:
+                print("Whatsapp authentication failed... Please make sure Twilio API keys are correct. Please review twilio.com for more info.\n")
         
         # if Webex Teams tokens set, then send message to Webex room
         if config_file['webex_access_token'] is '' or config_file['webex_room_id'] is '':
@@ -314,6 +383,7 @@ def new_casebook(feed_name,returned_observables_json,returned_sightings,entry_ti
                 if returned_sightings['total_sighting_count'] == 0:
                     webex_text = feed_name + " New case has been added to casebook from RSS Feed: " + entry_title
                     message = teams.messages.create(config_file['webex_room_id'], text=webex_text) 
+
                 if returned_sightings['total_sighting_count'] != 0:
                     webex_text = feed_name + " New case has been added to casebook from RSS Feed: " + entry_title + ". 🚨🚨🚨  HIGH PRIORITY, Target Sightings have been identified! AMP targets: " + str(returned_sightings['total_amp_sighting_count']) + ", Umbrella targets: " + str(returned_sightings['total_umbrella_sighting_count']) + ", Email targets: " + str(returned_sightings['total_email_sighting_count']) + ". 🚨🚨🚨"
                     message = teams.messages.create(config_file['webex_room_id'], text=webex_text)
@@ -322,6 +392,7 @@ def new_casebook(feed_name,returned_observables_json,returned_sightings,entry_ti
                 print("Webex authentication failed... Please make sure Webex Teams API key has not expired. Please review developer.webex.com for more info.\n")
     else:
         print(f"Something went wrong while posting the casebook to CTR, status code: {response.status_code}\n")
+
 
     return response.text
 
@@ -425,7 +496,6 @@ if __name__ == "__main__":
     try:
         # open config json file and grab client_id and secret
         open_config()
-     
         # activate the RSS feed parser for the Talos blog
         for rss_feed_index, rss_feed in enumerate(config_file['url_feeds']):
             parse_rss_feed(rss_feed,rss_feed_index)
