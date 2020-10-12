@@ -1,7 +1,7 @@
 [![published](https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-published.svg)](https://developer.cisco.com/codeexchange/github/repo/chrivand/talos_blog_to_casebook)
 
 ## Note
-This script is a slightly altered version of the orignal script made by chrivand (see forked from ....) to add the Twilio API for whatsapp notifications.
+This script is a very slightly altered version of the orignal script made by chrivand (see forked from ....) to add the Twilio API for whatsapp notifications.
 
 # RSS Feed Blog Parser to Cisco SecureX Threat Response Casebook [v2.0]
 
